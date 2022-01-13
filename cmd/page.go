@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
+	"notion-cli/config"
 	"notion-cli/handler"
 	"notion-cli/presenter"
 
@@ -17,41 +19,52 @@ import (
 )
 
 var (
-	pretty bool
+	pretty  bool
+	maximum int
 )
 
 // pageCmd represents the page command
 var pageCmd = &cobra.Command{
-	Use:   "page [page_id]",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "page [page_id1] [page_id2] ...",
+	Short: "get page information",
+	Long:  `get page information`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			fmt.Fprintln(os.Stderr, "not enough arguments in call: get page")
 			os.Exit(1)
 		}
-		pageId := args[0]
-		endpoint := "https://api.notion.com/v1/pages/" + pageId
+		if len(args) > maximum {
+			fmt.Fprintln(os.Stderr, "number of pages must be less than "+strconv.Itoa(maximum))
+			fmt.Fprintln(os.Stderr, "if you want to enlarge maximum number of pages, use --maximum option.")
+			os.Exit(1)
+		}
 
-		req := handler.GetHTTPHandler(endpoint, nil)
-		client := new(http.Client)
-		resp, _ := client.Do(req)
-		defer resp.Body.Close()
+		var byteArray []byte
+		byteArray = append(byteArray, []byte("[")...)
+		for i := 0; i < len(args); i++ {
+			pageId := args[i]
+			endpoint := config.PAGE_URL + pageId
 
-		byteArray, _ := ioutil.ReadAll(resp.Body)
+			req := handler.GetHTTPRequester(endpoint, nil)
+			client := new(http.Client)
+			resp, _ := client.Do(req)
+			defer resp.Body.Close()
 
+			tmp, _ := ioutil.ReadAll(resp.Body)
+			byteArray = append(byteArray, tmp...)
+			if i != (len(args) - 1) {
+				byteArray = append(byteArray, []byte(",")...)
+			}
+		}
+		byteArray = append(byteArray, []byte("]")...)
 		presenter.StdOutput(byteArray, pretty)
 	},
 }
 
 func init() {
 	getCmd.AddCommand(pageCmd)
-	pageCmd.PersistentFlags().BoolVar(&pretty, "pretty", false, "pretty json output")
+	pageCmd.PersistentFlags().BoolVar(&pretty, "pretty", false, "format the json output")
+	pageCmd.PersistentFlags().IntVar(&maximum, "maximum", 5, "change the upper bound of pages number")
 
 	// Here you will define your flags and configuration settings.
 

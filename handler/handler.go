@@ -9,12 +9,12 @@ import (
 	"notion-cli/config"
 )
 
-func GetHTTPHandler(endpoint string, body io.Reader) *http.Request {
+func GetHTTPRequester(endpoint string, body io.Reader) *http.Request {
 	token := os.Getenv("NOTION_INTEGRATION_TOKEN")
 
 	req, err := http.NewRequest("GET", endpoint, body)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error in GetHTTPHandler")
+		fmt.Fprintln(os.Stderr, "error in GetHTTPRequester")
 		fmt.Fprintln(os.Stderr, "endpoint: "+endpoint)
 		os.Exit(1)
 	}
