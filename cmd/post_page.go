@@ -33,8 +33,12 @@ to quickly create a Cobra application.`,
 		}
 
 		endpoint := config.PAGE_URL
-		raw := ``
-		payload := strings.NewReader(raw)
+		path := args[0]
+		bytes, err := ioutil.ReadFile(path)
+		if err != nil {
+			panic(err)
+		}
+		payload := strings.NewReader(string(bytes))
 		req := handler.PostHTTPRequester(endpoint, payload)
 		res, _ := http.DefaultClient.Do(req)
 
